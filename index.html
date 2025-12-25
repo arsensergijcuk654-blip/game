@@ -3,11 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mutant Elite 11.0: Synthesis Lab</title>
+    <title>Mutant Elite 12.0: Rarity & Visuals</title>
     <style>
         :root { 
             --p: #00f2fe; --g: #4dfa66; --y: #f1c40f; --r: #ff0055; 
             --bg: #010103; --card: rgba(20, 20, 35, 0.95);
+            /* Rarity Colors */
+            --common: #888; --rare: #007bff; --epic: #8a2be2; 
+            --legendary: #ffd700; --mythic: linear-gradient(45deg, #ff00ff, #00ffff, #ff0000);
+            --mythic-border: #ff00ff;
         }
         
         body { 
@@ -53,13 +57,45 @@
         .modal { background: #0a0a15; padding: 25px; border-radius: 20px; border: 1px solid var(--p); width: 90%; max-width: 450px; max-height: 85vh; overflow-y: auto; }
 
         .inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .inv-item { background: #111; padding: 10px; border-radius: 10px; border: 1px solid #333; cursor: pointer; position: relative; }
+        .inv-item { 
+            background: #111; padding: 10px; border-radius: 10px; border: 1px solid #333; 
+            cursor: pointer; position: relative; text-align: left;
+            transition: transform 0.1s;
+        }
+        .inv-item:active { transform: scale(0.98); }
         .inv-item.selected { border-color: var(--y); box-shadow: 0 0 10px var(--y); }
+
+        /* Rarity Visuals */
+        .rarity-common { border-color: var(--common) !important; color: var(--common); }
+        .rarity-rare { border-color: var(--rare) !important; color: var(--rare); }
+        .rarity-epic { border-color: var(--epic) !important; color: var(--epic); }
+        .rarity-legendary { border-color: var(--legendary) !important; color: var(--legendary); }
+        .rarity-mythic { 
+            border: 3px solid; border-image: var(--mythic) 1; 
+            color: #fff; animation: mythic-glow 1.5s infinite alternate;
+        }
+
+        @keyframes mythic-glow {
+            from { box-shadow: 0 0 5px var(--mythic-border); }
+            to { box-shadow: 0 0 20px var(--mythic-border); }
+        }
 
         .btn-action { background: var(--p); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 900; cursor: pointer; width: 100%; margin-top: 10px; }
         .craft-cost { color: var(--y); font-size: 14px; margin: 10px 0; }
         
         #xp-bar { position: fixed; bottom: 0; height: 10px; width: 0%; background: linear-gradient(90deg, var(--p), #ff00ff); transition: 0.3s; z-index: 1000; }
+
+        /* Particle effects */
+        .particle {
+            position: fixed; background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 50%; opacity: 0; animation: particle-fade 0.8s forwards;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        @keyframes particle-fade {
+            0% { transform: scale(0.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
 </head>
@@ -69,7 +105,7 @@
 
 <div id="auth-screen" class="overlay" style="display:flex;">
     <div class="modal">
-        <h2 style="color:var(--p)">MUTANT ELITE 11.0</h2>
+        <h2 style="color:var(--p)">MUTANT ELITE 12.0</h2>
         <input type="text" id="nick" placeholder="НІКНЕЙМ" style="width:100%; padding:10px; margin:10px 0; background:#000; border:1px solid var(--p); color:#fff; border-radius:8px; box-sizing: border-box;">
         <input type="password" id="pass" placeholder="ПАРОЛЬ" style="width:100%; padding:10px; margin:10px 0; background:#000; border:1px solid var(--p); color:#fff; border-radius:8px; box-sizing: border-box;">
         <button class="btn-action" onclick="handleAuth()">УВІЙТИ</button>
@@ -108,60 +144,124 @@
 <div id="inv-panel" class="overlay">
     <div class="modal">
         <h3 style="color:var(--p)">ВАШІ ГЕНИ</h3>
-        <div id="inv-list"></div>
+        <div id="inv-list" class="inv-grid"></div>
         <button class="btn-action" style="background:#444; color:#fff" onclick="toggleInv()">ЗАКРИТИ</button>
     </div>
 </div>
 
+<div id="reward-overlay" class="overlay">
+    <div class="modal" id="reward-content" style="text-align:center"></div>
+</div>
+
+<audio id="bg-music" loop></audio>
+<audio id="click-sfx"></audio>
+<audio id="open-case-sfx"></audio>
+<audio id="craft-sfx"></audio>
+
 <script>
     let score = 0, power = 1, lvl = 1, xp = 0, currentUser = "";
-    let inventory = [{n: "Атомарна Клітина", p: 1, c: "#fff"}];
+    let inventory = [{n: "Атомарна Клітина", p: 1, rarity: {name: "COMMON", mult: 1, col: "var(--common)"}, c: "var(--common)"}];
     let selectedForCraft = [];
 
+    // --- AUDIO SETUP ---
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const bgMusic = document.getElementById('bg-music');
+    const clickSfx = document.getElementById('click-sfx');
+    const openCaseSfx = document.getElementById('open-case-sfx');
+    const craftSfx = document.getElementById('craft-sfx');
+
+    function loadAudio(element, url, volume = 1, loop = false) {
+        // Замініть на реальні URL-и або Base64 дані
+        // Приклад для плейсхолдера:
+        // element.src = "data:audio/wav;base64,..."; 
+        element.volume = volume;
+        element.loop = loop;
+    }
+
+    // Завантаження плейсхолдерів для аудіо
+    loadAudio(bgMusic, '', 0.3, true); // Фонова музика
+    loadAudio(clickSfx, '', 0.7);      // Клік
+    loadAudio(openCaseSfx, '', 0.8);   // Відкриття кейсу
+    loadAudio(craftSfx, '', 0.9);      // Крафт
+
+    function playSfx(sfxElement) {
+        if (sfxElement.src) { // Перевірка, чи завантажено аудіо
+            sfxElement.currentTime = 0;
+            sfxElement.play().catch(e => console.log("Audio play failed:", e));
+        }
+    }
+
+    // --- GAME DATA ---
     const ICONS = ["📦","🧪","☢️","☣️","💾","🔥","⚡","💎","🛰️","🛸","🌌","🌑","🌀","⚛️","🔮","👹","🐲","👑","⛩️","👁️"];
-    const COLORS = ["#888", "#4dfa66", "#00f2fe", "#bc13fe", "#ff0055", "#ffd700", "#ffffff"];
     const CASE_DATA = [];
     for(let i=0; i<50; i++) {
         CASE_DATA.push({
             id: i, n: "Кейс #" + (i+1), cost: Math.floor(100 * Math.pow(1.8, i)),
-            min: Math.floor(2 * Math.pow(1.7, i)), col: COLORS[Math.floor(i/7)] || "#ff00ff", ico: ICONS[i % ICONS.length]
+            min: Math.floor(2 * Math.pow(1.7, i)), ico: ICONS[i % ICONS.length]
         });
     }
 
+    const RARITIES = [
+        { name: "COMMON", chance: 70, mult: 1, col: "var(--common)" },
+        { name: "RARE", chance: 20, mult: 1.5, col: "var(--rare)" },
+        { name: "EPIC", chance: 8, mult: 2.5, col: "var(--epic)" },
+        { name: "LEGENDARY", chance: 1.9, mult: 5, col: "var(--legendary)" },
+        { name: "MYTHIC", chance: 0.1, mult: 10, col: "var(--mythic-border)" } // Mythic uses border-image for actual color
+    ];
+
+    function getRarity() {
+        let r = Math.random() * 100;
+        let cumulativeChance = 0;
+        for (const rarity of RARITIES) {
+            cumulativeChance += rarity.chance;
+            if (r < cumulativeChance) {
+                return rarity;
+            }
+        }
+        return RARITIES[0]; // Fallback to common
+    }
+
+    // --- AUTH & SAVE ---
     function handleAuth() {
         const nick = document.getElementById('nick').value.trim();
         const pass = document.getElementById('pass').value.trim();
         if(!nick || !pass) return;
-        let accs = JSON.parse(localStorage.getItem('mutant_v11_saves') || '{}');
+        let accs = JSON.parse(localStorage.getItem('mutant_v12_saves') || '{}');
         if(accs[nick]) {
             if(accs[nick].pass !== pass) return alert("Невірний пароль!");
             loadData(nick, accs[nick]);
         } else {
             accs[nick] = { pass, score: 0, lvl: 1, xp: 0, inventory: [...inventory] };
-            localStorage.setItem('mutant_v11_saves', JSON.stringify(accs));
+            localStorage.setItem('mutant_v12_saves', JSON.stringify(accs));
             loadData(nick, accs[nick]);
         }
     }
 
     function loadData(nick, data) {
         currentUser = nick; score = data.score; lvl = data.lvl; xp = data.xp; inventory = data.inventory;
+        // Fix for old saves without rarity
+        inventory = inventory.map(item => item.rarity ? item : {...item, rarity: RARITIES[0], c: RARITIES[0].col});
+
         document.getElementById('auth-screen').style.display = 'none';
         document.getElementById('btn').style.display = 'flex';
         renderCases(); updateUI(); moveBtn();
         setInterval(() => { score += (lvl * 5); updateUI(); }, 1000);
         setInterval(saveGame, 5000);
+        // Play background music on user interaction
+        bgMusic.play().catch(e => console.log("Initial audio play failed:", e));
     }
 
     function saveGame() {
         if(!currentUser) return;
-        let accs = JSON.parse(localStorage.getItem('mutant_v11_saves') || '{}');
+        let accs = JSON.parse(localStorage.getItem('mutant_v12_saves') || '{}');
         accs[currentUser] = { pass: accs[currentUser].pass, score, lvl, xp, inventory };
-        localStorage.setItem('mutant_v11_saves', JSON.stringify(accs));
+        localStorage.setItem('mutant_v12_saves', JSON.stringify(accs));
     }
 
+    // --- UI RENDERING ---
     function renderCases() {
         document.getElementById('case-list').innerHTML = CASE_DATA.map((c, i) => `
-            <div class="case-card" onclick="buyCase(${i})" style="border-color:${c.col}">
+            <div class="case-card" onclick="buyCase(${i})" style="border-color:${c.col || 'var(--common)'}">
                 <span style="font-size:20px">${c.ico}</span>
                 <b>${c.n}</b>
                 <span style="color:var(--y)">$${formatNum(c.cost)}</span>
@@ -173,13 +273,73 @@
         const c = CASE_DATA[i];
         if(score < c.cost) return alert("Мало грошей!");
         score -= c.cost;
-        const pwr = Math.floor(c.min * (1 + Math.random() * 2));
-        inventory.push({ n: "Мутант " + c.ico, p: pwr, c: c.col });
+        playSfx(openCaseSfx);
+
+        const rarity = getRarity();
+        const pwr = Math.floor(c.min * (1 + Math.random() * 2) * rarity.mult);
+        const newMutant = { n: "Мутант " + c.ico, p: pwr, rarity: rarity, c: rarity.col };
+        inventory.push(newMutant);
         updateUI();
-        alert("Отримано: Мутант з силою " + formatNum(pwr));
+
+        document.getElementById('reward-content').innerHTML = `
+            <h2 style="color:${rarity.col}">${c.ico} НОВИЙ ВИД!</h2>
+            <p style="color:${rarity.col}; font-size:1.2em">${rarity.name}!</p>
+            <p>Сила: +${formatNum(pwr)}</p>
+            <button class="btn-action" onclick="document.getElementById('reward-overlay').style.display='none'">В БАНК</button>
+        `;
+        document.getElementById('reward-overlay').style.display = 'flex';
     }
 
-    // CRAFT LOGIC
+    const clickBtn = document.getElementById('btn');
+    clickBtn.onclick = (e) => {
+        let isCrit = Math.random() < 0.15;
+        let gain = Math.floor(power * (1 + lvl * 0.3) * (isCrit ? 10 : 1));
+        score += gain; xp += 40;
+        
+        playSfx(clickSfx);
+        createFloat(e.clientX, e.clientY, `+${formatNum(gain)}`, isCrit ? 'var(--y)' : '#fff');
+        createParticles(e.clientX, e.clientY, isCrit ? 'var(--y)' : '#fff');
+
+        if(xp >= lvl * 1000) { lvl++; xp = 0; }
+        updateUI(); moveBtn();
+    };
+
+    function updateUI() {
+        document.getElementById('score').innerText = formatNum(score);
+        document.getElementById('lvl').innerText = lvl;
+        document.getElementById('xp-bar').style.width = (xp / (lvl * 1000)) * 100 + "%";
+    }
+
+    function formatNum(n) {
+        if(n >= 1e12) return (n/1e12).toFixed(2) + 'T';
+        if(n >= 1e9) return (n/1e9).toFixed(2) + 'B';
+        if(n >= 1e6) return (n/1e6).toFixed(2) + 'M';
+        if(n >= 1e3) return (n/1e3).toFixed(1) + 'k';
+        return Math.floor(n);
+    }
+
+    function moveBtn() {
+        const x = Math.random() * (window.innerWidth - 300) + 150;
+        const y = Math.random() * (window.innerHeight - 300) + 150;
+        clickBtn.style.left = x + 'px';
+        clickBtn.style.top = y + 'px';
+    }
+
+    // --- INVENTORY & CRAFT ---
+    function toggleInv() {
+        const p = document.getElementById('inv-panel');
+        p.style.display = (p.style.display === 'flex') ? 'none' : 'flex';
+        if(p.style.display === 'flex') {
+            document.getElementById('inv-list').innerHTML = inventory.slice().reverse().map(item => `
+                <div class="inv-item rarity-${item.rarity.name.toLowerCase()}" style="border-color:${item.c};">
+                    <span style="font-size:12px; font-weight:bold;">${item.rarity.name}</span>
+                    <div style="font-size:10px;">PWR: ${formatNum(item.p)}</div>
+                    <button onclick="power=${item.p}; toggleInv();" style="background:var(--g); border:none; padding:5px; border-radius:3px; cursor:pointer; position:absolute; bottom:5px; right:5px;">USE</button>
+                </div>
+            `).join('');
+        }
+    }
+
     function toggleCraft() {
         const p = document.getElementById('craft-panel');
         p.style.display = (p.style.display === 'flex') ? 'none' : 'flex';
@@ -189,11 +349,10 @@
     }
 
     function renderCraftList() {
-        const list = document.getElementById('craft-list');
-        list.innerHTML = inventory.map((item, i) => `
-            <div class="inv-item" id="craft-item-${i}" onclick="selectForCraft(${i})">
-                <div style="color:${item.c}">${item.n}</div>
-                <div style="font-size:10px">PWR: ${formatNum(item.p)}</div>
+        document.getElementById('craft-list').innerHTML = inventory.map((item, i) => `
+            <div class="inv-item rarity-${item.rarity.name.toLowerCase()}" id="craft-item-${i}" onclick="selectForCraft(${i})">
+                <span style="font-size:10px; font-weight:bold;">${item.rarity.name}</span>
+                <div style="font-size:9px">PWR: ${formatNum(item.p)}</div>
             </div>
         `).join('');
     }
@@ -215,7 +374,7 @@
         if(selectedForCraft.length === 2) {
             const p1 = inventory[selectedForCraft[0]].p;
             const p2 = inventory[selectedForCraft[1]].p;
-            price = Math.floor((p1 + p2) * 10); // Ціна залежить від сили
+            price = Math.floor((p1 + p2) * 10);
         }
         document.getElementById('craft-price').innerText = `Ціна синтезу: $${formatNum(price)}`;
         return price;
@@ -225,67 +384,32 @@
         if(selectedForCraft.length < 2) return alert("Оберіть 2 мутанти!");
         const price = updateCraftPrice();
         if(score < price) return alert("Недостатньо грошей для синтезу!");
+        playSfx(craftSfx);
 
         score -= price;
         const m1 = inventory[selectedForCraft[0]];
         const m2 = inventory[selectedForCraft[1]];
         
-        const newPwr = Math.floor((m1.p + m2.p) * (1.2 + Math.random() * 0.3));
-        const newMut = { n: "Гібрид-X", p: newPwr, c: "#ff00ff" };
+        let newRarity = getRarity(); // Шанс отримати нову рідкісність
+        if (m1.rarity.mult > newRarity.mult || m2.rarity.mult > newRarity.mult) {
+            // Зберігаємо вищу рідкісність, якщо нова гірша
+            newRarity = (m1.rarity.mult > m2.rarity.mult) ? m1.rarity : m2.rarity;
+        }
 
-        // Видалення (спочатку більший індекс, щоб не збився список)
+        const newPwr = Math.floor((m1.p + m2.p) * (1.2 + Math.random() * 0.3) * newRarity.mult);
+        const newMutant = { n: "Гібрид-X", p: newPwr, rarity: newRarity, c: newRarity.col };
+
         const sortedIndices = [...selectedForCraft].sort((a,b) => b-a);
         inventory.splice(sortedIndices[0], 1);
         inventory.splice(sortedIndices[1], 1);
         
-        inventory.unshift(newMut);
-        alert(`Успіх! Створено гібрид силою ${formatNum(newPwr)}`);
+        inventory.unshift(newMutant);
+        alert(`Успіх! Створено ${newRarity.name} гібрид силою ${formatNum(newPwr)}`);
         toggleCraft();
         updateUI();
     }
 
-    const clickBtn = document.getElementById('btn');
-    clickBtn.onclick = (e) => {
-        let gain = Math.floor(power * (1 + lvl * 0.3) * (Math.random() < 0.1 ? 5 : 1));
-        score += gain; xp += 40;
-        createFloat(e.clientX, e.clientY, `+${formatNum(gain)}`, "#fff");
-        if(xp >= lvl * 1000) { lvl++; xp = 0; }
-        updateUI(); moveBtn();
-    };
-
-    function updateUI() {
-        document.getElementById('score').innerText = formatNum(score);
-        document.getElementById('lvl').innerText = lvl;
-        document.getElementById('xp-bar').style.width = (xp / (lvl * 1000)) * 100 + "%";
-    }
-
-    function formatNum(n) {
-        if(n >= 1e9) return (n/1e9).toFixed(1) + 'B';
-        if(n >= 1e6) return (n/1e6).toFixed(1) + 'M';
-        if(n >= 1e3) return (n/1e3).toFixed(1) + 'k';
-        return Math.floor(n);
-    }
-
-    function moveBtn() {
-        const x = Math.random() * (window.innerWidth - 300) + 150;
-        const y = Math.random() * (window.innerHeight - 300) + 150;
-        clickBtn.style.left = x + 'px';
-        clickBtn.style.top = y + 'px';
-    }
-
-    function toggleInv() {
-        const p = document.getElementById('inv-panel');
-        p.style.display = (p.style.display === 'flex') ? 'none' : 'flex';
-        if(p.style.display === 'flex') {
-            document.getElementById('inv-list').innerHTML = inventory.slice().reverse().map(item => `
-                <div style="background:#111; padding:10px; margin:5px 0; border-left:4px solid ${item.c}; display:flex; justify-content:space-between;">
-                    <span>PWR: ${formatNum(item.p)}</span>
-                    <button onclick="power=${item.p}; toggleInv();" style="background:var(--g); border:none; padding:5px; border-radius:3px; cursor:pointer;">USE</button>
-                </div>
-            `).join('');
-        }
-    }
-
+    // --- VISUAL EFFECTS ---
     function createFloat(x, y, t, c) {
         const el = document.createElement('div');
         el.style.cssText = `position:fixed; left:${x}px; top:${y}px; color:${c}; font-weight:900; pointer-events:none; animation: up 0.7s forwards; z-index:1000;`;
@@ -293,6 +417,23 @@
         setTimeout(() => el.remove(), 700);
     }
 
+    function createParticles(x, y, color) {
+        for (let i = 0; i < 5; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.backgroundColor = color;
+            particle.style.left = `${x + (Math.random() - 0.5) * 20}px`;
+            particle.style.top = `${y + (Math.random() - 0.5) * 20}px`;
+            particle.style.width = `${Math.random() * 8 + 4}px`;
+            particle.style.height = particle.style.width;
+            particle.style.animationDuration = `${Math.random() * 0.5 + 0.5}s`;
+            particle.style.animationDelay = `${i * 0.05}s`;
+            document.body.appendChild(particle);
+            setTimeout(() => particle.remove(), parseFloat(particle.style.animationDuration) * 1000 + parseFloat(particle.style.animationDelay) * 1000);
+        }
+    }
+
+    // --- CANVAS BG ANIMATION ---
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
