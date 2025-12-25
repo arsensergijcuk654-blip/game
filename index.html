@@ -3,77 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mutant Elite: Overdrive 8.0 - Social Update</title>
+    <title>Mutant Elite 11.0: Synthesis Lab</title>
     <style>
         :root { 
             --p: #00f2fe; --g: #4dfa66; --y: #f1c40f; --r: #ff0055; 
-            --purp: #bc13fe; --ultra: #ff00ff; --gold: #ffd700; --sing: #6a0dad; --bg: #010103; 
+            --bg: #010103; --card: rgba(20, 20, 35, 0.95);
         }
         
         body { 
             text-align: center; font-family: 'Orbitron', sans-serif; 
             background: var(--bg); color: white; margin: 0; overflow: hidden; height: 100vh;
-            user-select: none; -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
 
         #canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
 
         .top-bar { 
             display: flex; justify-content: space-between; align-items: center;
-            background: rgba(0, 0, 0, 0.9); padding: 10px 15px; 
+            background: rgba(0, 0, 0, 0.9); padding: 10px 20px; 
             border-bottom: 2px solid var(--p); backdrop-filter: blur(15px);
-            position: relative; z-index: 100;
+            position: relative; z-index: 500;
         }
 
-        /* UI Containers */
-        .side-menu {
-            position: fixed; right: 10px; top: 80px; display: flex; flex-direction: column; gap: 10px; z-index: 100;
-        }
-        .side-btn { 
-            background: rgba(0,0,0,0.8); border: 1px solid var(--p); color: #fff; 
-            padding: 10px; border-radius: 8px; font-size: 10px; cursor: pointer;
+        .cases-wrapper {
+            position: fixed; left: 0; top: 70px; bottom: 0; width: 130px;
+            background: rgba(0,0,0,0.5); border-right: 1px solid rgba(0,242,254,0.3);
+            z-index: 400; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--p) transparent;
         }
 
-        .cases-container { 
-            position: fixed; left: 10px; top: 80px; width: 90px; 
-            max-height: 80vh; overflow-y: auto; padding: 5px;
-            display: flex; flex-direction: column; gap: 8px; z-index: 90;
-            scrollbar-width: none;
-        }
-        .cases-container::-webkit-scrollbar { display: none; }
+        .case-list { padding: 10px; display: flex; flex-direction: column; gap: 15px; }
 
         .case-card { 
-            width: 100%; min-height: 80px; background: rgba(20,20,30,0.8); 
+            width: 100%; aspect-ratio: 1/1; background: var(--card); 
             border: 2px solid; border-radius: 12px; cursor: pointer; 
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             font-size: 9px; transition: 0.2s;
         }
-        .case-card:active { transform: scale(0.9); }
+        .case-card:hover { transform: translateX(5px); }
 
         #btn { 
-            width: 130px; height: 130px; border-radius: 50%; border: 4px solid #fff; 
+            width: 150px; height: 150px; border-radius: 50%; border: 4px solid #fff; 
             position: absolute; cursor: pointer; font-weight: 900; 
             z-index: 10; background: radial-gradient(circle, var(--p), #000);
-            color: #fff; box-shadow: 0 0 25px var(--p); display: none;
-            align-items: center; justify-content: center; transition: transform 0.05s;
+            color: #fff; box-shadow: 0 0 30px var(--p); display: none;
+            align-items: center; justify-content: center; transform: translate(-50%, -50%);
         }
 
-        /* Modals & Social */
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 2000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        .modal { background: #0a0a15; padding: 20px; border-radius: 20px; border: 1px solid var(--p); width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .modal { background: #0a0a15; padding: 25px; border-radius: 20px; border: 1px solid var(--p); width: 90%; max-width: 450px; max-height: 85vh; overflow-y: auto; }
+
+        .inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .inv-item { background: #111; padding: 10px; border-radius: 10px; border: 1px solid #333; cursor: pointer; position: relative; }
+        .inv-item.selected { border-color: var(--y); box-shadow: 0 0 10px var(--y); }
+
+        .btn-action { background: var(--p); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 900; cursor: pointer; width: 100%; margin-top: 10px; }
+        .craft-cost { color: var(--y); font-size: 14px; margin: 10px 0; }
         
-        .tab-content { display: none; margin-top: 15px; }
-        .active-tab { display: block; }
-        
-        .chat-box { height: 200px; overflow-y: auto; background: #000; border: 1px solid #333; padding: 10px; text-align: left; font-size: 12px; margin-bottom: 10px; }
-        .chat-msg { margin-bottom: 5px; border-bottom: 1px solid #111; padding-bottom: 2px; }
-        
-        .leader-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #222; font-size: 13px; }
-        
-        #xp-bar { position: fixed; bottom: 0; height: 6px; width: 0%; background: var(--p); box-shadow: 0 0 10px var(--p); transition: 0.3s; }
-        
-        input { width: 100%; padding: 10px; margin: 5px 0; background: #111; border: 1px solid var(--p); color: #fff; border-radius: 8px; box-sizing: border-box; }
-        .main-btn { width: 100%; padding: 12px; background: var(--p); border: none; border-radius: 8px; font-weight: 900; cursor: pointer; }
+        #xp-bar { position: fixed; bottom: 0; height: 10px; width: 0%; background: linear-gradient(90deg, var(--p), #ff00ff); transition: 0.3s; z-index: 1000; }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
 </head>
@@ -83,252 +69,205 @@
 
 <div id="auth-screen" class="overlay" style="display:flex;">
     <div class="modal">
-        <h2 style="color:var(--p)">MUTANT ELITE 8.0</h2>
-        <input type="text" id="nick" placeholder="НІКНЕЙМ">
-        <input type="password" id="pass" placeholder="ПАРОЛЬ">
-        <button class="main-btn" onclick="handleAuth()">УВІЙТИ В МЕРЕЖУ</button>
-    </div>
-</div>
-
-<div id="social-panel" class="overlay">
-    <div class="modal">
-        <div style="display:flex; gap:5px; margin-bottom:15px;">
-            <button class="side-btn" onclick="openTab('chat')">ЧАТ</button>
-            <button class="side-btn" onclick="openTab('leaders')">ТОП</button>
-            <button class="side-btn" onclick="openTab('clans')">КЛАНИ</button>
-            <button class="side-btn" style="background:var(--r)" onclick="closeSocial()">X</button>
-        </div>
-
-        <div id="chat" class="tab-content active-tab">
-            <div class="chat-box" id="chat-box"></div>
-            <div style="display:flex; gap:5px;">
-                <input type="text" id="chat-input" placeholder="Повідомлення...">
-                <button onclick="sendMsg()" style="background:var(--p); border:none; border-radius:5px; padding:0 15px;">></button>
-            </div>
-        </div>
-
-        <div id="leaders" class="tab-content">
-            <h3 style="color:var(--y)">ТОП МУТАНТІВ</h3>
-            <div id="leader-list"></div>
-        </div>
-
-        <div id="clans" class="tab-content">
-            <h3 style="color:var(--g)">КЛАНИ</h3>
-            <input type="text" id="clan-name" placeholder="Назва клану">
-            <button class="main-btn" style="background:var(--g)" onclick="createClan()">СТВОРИТИ (100k)</button>
-            <div id="clan-list" style="margin-top:10px;"></div>
-        </div>
+        <h2 style="color:var(--p)">MUTANT ELITE 11.0</h2>
+        <input type="text" id="nick" placeholder="НІКНЕЙМ" style="width:100%; padding:10px; margin:10px 0; background:#000; border:1px solid var(--p); color:#fff; border-radius:8px; box-sizing: border-box;">
+        <input type="password" id="pass" placeholder="ПАРОЛЬ" style="width:100%; padding:10px; margin:10px 0; background:#000; border:1px solid var(--p); color:#fff; border-radius:8px; box-sizing: border-box;">
+        <button class="btn-action" onclick="handleAuth()">УВІЙТИ</button>
     </div>
 </div>
 
 <div class="top-bar">
-    <div style="font-size:10px; text-align:left;">
-        <div style="color:var(--p)">🧬 LVL <span id="lvl">1</span></div>
-        <div style="color:var(--y)">💰 <span id="score">0</span></div>
+    <div style="text-align:left">
+        <div style="color:var(--p); font-size:10px;">🧬 LVL <span id="lvl">1</span></div>
+        <div style="color:var(--y); font-size:18px; font-weight:900;">$ <span id="score">0</span></div>
     </div>
-    <div style="font-size:14px; font-weight:900;">MUTANT ELITE</div>
-    <button onclick="toggleInv()" style="background:var(--p); border:none; border-radius:5px; padding:5px 10px; font-family:inherit; font-size:10px;">BANK</button>
+    <div style="display:flex; gap:10px;">
+        <button onclick="toggleCraft()" style="background:var(--y); border:none; padding:8px 15px; border-radius:5px; font-weight:900; cursor:pointer;">CRAFT</button>
+        <button onclick="toggleInv()" style="background:var(--p); border:none; padding:8px 15px; border-radius:5px; font-weight:900; cursor:pointer;">BANK</button>
+    </div>
 </div>
 
-<div class="side-menu">
-    <button class="side-btn" onclick="openSocial()">COMMUNITY</button>
-    <button class="side-btn" onclick="showLvlInfo()">STATS</button>
+<div class="cases-wrapper">
+    <div class="case-list" id="case-list"></div>
 </div>
 
-<div class="cases-container" id="casesUI"></div>
 <div id="xp-bar"></div>
 <button id="btn">MUTATE</button>
 
-<div id="opening-overlay" class="overlay">
-    <div class="modal" id="reward-area" style="text-align:center;"></div>
+<div id="craft-panel" class="overlay">
+    <div class="modal">
+        <h3 style="color:var(--y)">ЛАБОРАТОРІЯ СИНТЕЗУ</h3>
+        <p style="font-size:10px">Оберіть 2 мутанти для об'єднання</p>
+        <div id="craft-list" class="inv-grid"></div>
+        <div class="craft-cost" id="craft-price">Ціна: $0</div>
+        <button class="btn-action" id="craft-btn" onclick="startCraft()" style="background:var(--y)">СИНТЕЗУВАТИ</button>
+        <button class="btn-action" style="background:#444; color:#fff" onclick="toggleCraft()">СКАСУВАТИ</button>
+    </div>
 </div>
 
 <div id="inv-panel" class="overlay">
     <div class="modal">
-        <h3>STORAGE</h3>
+        <h3 style="color:var(--p)">ВАШІ ГЕНИ</h3>
         <div id="inv-list"></div>
-        <button class="main-btn" style="background:#222; margin-top:10px;" onclick="toggleInv()">ЗАКРИТИ</button>
+        <button class="btn-action" style="background:#444; color:#fff" onclick="toggleInv()">ЗАКРИТИ</button>
     </div>
 </div>
 
 <script>
-    let score = 0, power = 1, lvl = 1, xp = 0, currentUser = "", currentClan = "Немає";
-    let inventory = [{n: "Первинна ДНК", p: 1, c: "#00f2fe", sell: 0}];
-    let chatMsgs = [{u: "System", m: "Ласкаво просимо в Overdrive 8.0!"}];
+    let score = 0, power = 1, lvl = 1, xp = 0, currentUser = "";
+    let inventory = [{n: "Атомарна Клітина", p: 1, c: "#fff"}];
+    let selectedForCraft = [];
 
-    const CASE_DATA = [
-        { n: "Бруд", cost: 50, min: 2, col: "#6d4c41", icon: "💩" },
-        { n: "Смітник", cost: 200, min: 10, col: "#888", icon: "📦" },
-        { n: "Лабораторія", cost: 800, min: 40, col: "#4dfa66", icon: "🧪" },
-        { n: "Радіація", cost: 2500, min: 120, col: "#ccff00", icon: "☣️" },
-        { n: "Неон", cost: 7000, min: 350, col: "#00f2fe", icon: "💎" },
-        { n: "Кібернетика", cost: 15000, min: 800, col: "#bc13fe", icon: "🤖" },
-        { n: "Вулкан", cost: 40000, min: 2200, col: "#ff5500", icon: "🔥" },
-        { n: "Плазма", cost: 100000, min: 6000, col: "#ff00ff", icon: "⚡" },
-        { n: "Гіперзвук", cost: 250000, min: 15000, col: "#0055ff", icon: "🛸" },
-        { n: "Кристал", cost: 600000, min: 40000, col: "#00ffff", icon: "🔮" },
-        { n: "Золото", cost: 1500000, min: 100000, col: "#ffd700", icon: "👑" },
-        { n: "Темна Матерія", cost: 4000000, min: 300000, col: "#330066", icon: "🌑" },
-        { n: "Зірка", cost: 10000000, min: 800000, col: "#fff", icon: "🌟" },
-        { n: "Галактика", cost: 30000000, min: 2500000, col: "#6a0dad", icon: "🌌" },
-        { n: "Чорна Діра", cost: 100000000, min: 10000000, col: "#000", icon: "🕳️" },
-        { n: "Вимір X", cost: 500000000, min: 60000000, col: "#ff0055", icon: "⛩️" },
-        { n: "Квант", cost: 2000000000, min: 250000000, col: "#00ff88", icon: "⚛️" },
-        { n: "Ефір", cost: 10000000000, min: 1500000000, col: "#ffffff", icon: "👻" },
-        { n: "Сингулярність", cost: 50000000000, min: 8000000000, col: "#ff00ff", icon: "🌀" },
-        { n: "Творець", cost: 250000000000, min: 50000000000, col: "#ffd700", icon: "👁️" }
-    ];
-
-    const MUT_NAMES = ["Гібрид", "Титан", "Фантом", "Звір", "Колосс", "Хижак", "Аватар"];
-
-    function initCases() {
-        const container = document.getElementById('casesUI');
-        CASE_DATA.forEach((c, i) => {
-            container.innerHTML += `
-                <div class="case-card" onclick="buyCase(${i})" style="border-color:${c.col}">
-                    <span style="font-size:20px">${c.icon}</span>
-                    <b style="color:${c.col}">${c.n}</b>
-                    <span>${formatNum(c.cost)}</span>
-                </div>`;
+    const ICONS = ["📦","🧪","☢️","☣️","💾","🔥","⚡","💎","🛰️","🛸","🌌","🌑","🌀","⚛️","🔮","👹","🐲","👑","⛩️","👁️"];
+    const COLORS = ["#888", "#4dfa66", "#00f2fe", "#bc13fe", "#ff0055", "#ffd700", "#ffffff"];
+    const CASE_DATA = [];
+    for(let i=0; i<50; i++) {
+        CASE_DATA.push({
+            id: i, n: "Кейс #" + (i+1), cost: Math.floor(100 * Math.pow(1.8, i)),
+            min: Math.floor(2 * Math.pow(1.7, i)), col: COLORS[Math.floor(i/7)] || "#ff00ff", ico: ICONS[i % ICONS.length]
         });
     }
 
-    function formatNum(n) {
-        if(n >= 1e12) return (n/1e12).toFixed(1) + 'T';
-        if(n >= 1e9) return (n/1e9).toFixed(1) + 'B';
-        if(n >= 1e6) return (n/1e6).toFixed(1) + 'M';
-        if(n >= 1e3) return (n/1e3).toFixed(1) + 'k';
-        return n;
-    }
-
-    // --- Auth Logic ---
     function handleAuth() {
         const nick = document.getElementById('nick').value.trim();
         const pass = document.getElementById('pass').value.trim();
-        if(!nick || nick.length < 3) return alert("Нік занадто короткий!");
-        
-        let accs = JSON.parse(localStorage.getItem('mutant_v8_saves') || '{}');
+        if(!nick || !pass) return;
+        let accs = JSON.parse(localStorage.getItem('mutant_v11_saves') || '{}');
         if(accs[nick]) {
-            if(accs[nick].pass !== pass) return alert("Пароль невірний!");
+            if(accs[nick].pass !== pass) return alert("Невірний пароль!");
             loadData(nick, accs[nick]);
         } else {
-            accs[nick] = { pass, score: 0, lvl: 1, xp: 0, inventory: [...inventory], clan: "Немає" };
-            localStorage.setItem('mutant_v8_saves', JSON.stringify(accs));
+            accs[nick] = { pass, score: 0, lvl: 1, xp: 0, inventory: [...inventory] };
+            localStorage.setItem('mutant_v11_saves', JSON.stringify(accs));
             loadData(nick, accs[nick]);
         }
     }
 
     function loadData(nick, data) {
-        currentUser = nick; score = data.score; lvl = data.lvl; xp = data.xp; 
-        inventory = data.inventory; currentClan = data.clan || "Немає";
+        currentUser = nick; score = data.score; lvl = data.lvl; xp = data.xp; inventory = data.inventory;
         document.getElementById('auth-screen').style.display = 'none';
         document.getElementById('btn').style.display = 'flex';
-        initCases(); updateUI(); moveBtn();
-        
-        setInterval(() => { score += (lvl * 5); updateUI(); }, 1000); // Passive DNA
+        renderCases(); updateUI(); moveBtn();
+        setInterval(() => { score += (lvl * 5); updateUI(); }, 1000);
         setInterval(saveGame, 5000);
     }
 
     function saveGame() {
         if(!currentUser) return;
-        let accs = JSON.parse(localStorage.getItem('mutant_v8_saves') || '{}');
-        accs[currentUser] = { pass: accs[currentUser].pass, score, lvl, xp, inventory, clan: currentClan };
-        localStorage.setItem('mutant_v8_saves', JSON.stringify(accs));
+        let accs = JSON.parse(localStorage.getItem('mutant_v11_saves') || '{}');
+        accs[currentUser] = { pass: accs[currentUser].pass, score, lvl, xp, inventory };
+        localStorage.setItem('mutant_v11_saves', JSON.stringify(accs));
     }
 
-    // --- Game Logic ---
-    const clickBtn = document.getElementById('btn');
-    clickBtn.onclick = (e) => {
-        let critChance = 0.1 + (lvl * 0.005);
-        let isCrit = Math.random() < critChance;
-        let gain = Math.floor(power * (1 + lvl * 0.2) * (isCrit ? 10 : 1));
-        
-        score += gain; xp += 25;
-        if(xp >= lvl * 500) { lvl++; xp = 0; }
-        
-        createFloat(e.clientX, e.clientY, `+${formatNum(gain)}`, isCrit ? 'var(--y)' : '#fff');
-        updateUI(); moveBtn();
-    };
+    function renderCases() {
+        document.getElementById('case-list').innerHTML = CASE_DATA.map((c, i) => `
+            <div class="case-card" onclick="buyCase(${i})" style="border-color:${c.col}">
+                <span style="font-size:20px">${c.ico}</span>
+                <b>${c.n}</b>
+                <span style="color:var(--y)">$${formatNum(c.cost)}</span>
+            </div>
+        `).join('');
+    }
 
-    function buyCase(idx) {
-        const c = CASE_DATA[idx];
-        if(score < c.cost) return alert("Недостатньо коштів!");
+    function buyCase(i) {
+        const c = CASE_DATA[i];
+        if(score < c.cost) return alert("Мало грошей!");
         score -= c.cost;
+        const pwr = Math.floor(c.min * (1 + Math.random() * 2));
+        inventory.push({ n: "Мутант " + c.ico, p: pwr, c: c.col });
+        updateUI();
+        alert("Отримано: Мутант з силою " + formatNum(pwr));
+    }
+
+    // CRAFT LOGIC
+    function toggleCraft() {
+        const p = document.getElementById('craft-panel');
+        p.style.display = (p.style.display === 'flex') ? 'none' : 'flex';
+        selectedForCraft = [];
+        if(p.style.display === 'flex') renderCraftList();
+        updateCraftPrice();
+    }
+
+    function renderCraftList() {
+        const list = document.getElementById('craft-list');
+        list.innerHTML = inventory.map((item, i) => `
+            <div class="inv-item" id="craft-item-${i}" onclick="selectForCraft(${i})">
+                <div style="color:${item.c}">${item.n}</div>
+                <div style="font-size:10px">PWR: ${formatNum(item.p)}</div>
+            </div>
+        `).join('');
+    }
+
+    function selectForCraft(i) {
+        const idx = selectedForCraft.indexOf(i);
+        if(idx > -1) {
+            selectedForCraft.splice(idx, 1);
+            document.getElementById(`craft-item-${i}`).classList.remove('selected');
+        } else if(selectedForCraft.length < 2) {
+            selectedForCraft.push(i);
+            document.getElementById(`craft-item-${i}`).classList.add('selected');
+        }
+        updateCraftPrice();
+    }
+
+    function updateCraftPrice() {
+        let price = 0;
+        if(selectedForCraft.length === 2) {
+            const p1 = inventory[selectedForCraft[0]].p;
+            const p2 = inventory[selectedForCraft[1]].p;
+            price = Math.floor((p1 + p2) * 10); // Ціна залежить від сили
+        }
+        document.getElementById('craft-price').innerText = `Ціна синтезу: $${formatNum(price)}`;
+        return price;
+    }
+
+    function startCraft() {
+        if(selectedForCraft.length < 2) return alert("Оберіть 2 мутанти!");
+        const price = updateCraftPrice();
+        if(score < price) return alert("Недостатньо грошей для синтезу!");
+
+        score -= price;
+        const m1 = inventory[selectedForCraft[0]];
+        const m2 = inventory[selectedForCraft[1]];
         
-        const overlay = document.getElementById('opening-overlay');
-        overlay.style.display = 'flex';
-        document.getElementById('reward-area').innerHTML = `<h2 style="color:${c.col}">ГЕНЕРУЮ МУТАЦІЮ...</h2>`;
+        const newPwr = Math.floor((m1.p + m2.p) * (1.2 + Math.random() * 0.3));
+        const newMut = { n: "Гібрид-X", p: newPwr, c: "#ff00ff" };
+
+        // Видалення (спочатку більший індекс, щоб не збився список)
+        const sortedIndices = [...selectedForCraft].sort((a,b) => b-a);
+        inventory.splice(sortedIndices[0], 1);
+        inventory.splice(sortedIndices[1], 1);
         
-        setTimeout(() => {
-            const name = MUT_NAMES[Math.floor(Math.random()*MUT_NAMES.length)] + " " + c.n;
-            const pwr = Math.floor(c.min * (1 + Math.random() * 2));
-            inventory.push({ n: name, p: pwr, c: c.col, sell: Math.floor(c.cost*0.6) });
-            
-            document.getElementById('reward-area').innerHTML = `
-                <h1 style="color:${c.col}">${name}</h1>
-                <p style="font-size:24px">+${formatNum(pwr)} СИЛИ</p>
-                <button class="main-btn" onclick="document.getElementById('opening-overlay').style.display='none'">У КОЛЕКЦІЮ</button>
-            `;
-            updateUI();
-        }, 1000);
-    }
-
-    // --- UI/Social ---
-    function openSocial() { 
-        document.getElementById('social-panel').style.display = 'flex'; 
-        updateLeaders(); 
-        renderChat();
-    }
-    function closeSocial() { document.getElementById('social-panel').style.display = 'none'; }
-    
-    function openTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active-tab'));
-        document.getElementById(tabId).classList.add('active-tab');
-    }
-
-    function renderChat() {
-        const box = document.getElementById('chat-box');
-        box.innerHTML = chatMsgs.map(m => `<div class="chat-msg"><b>${m.u}:</b> ${m.m}</div>`).join('');
-        box.scrollTop = box.scrollHeight;
-    }
-
-    function sendMsg() {
-        const inp = document.getElementById('chat-input');
-        if(!inp.value) return;
-        chatMsgs.push({u: currentUser, m: inp.value});
-        if(chatMsgs.length > 20) chatMsgs.shift();
-        inp.value = "";
-        renderChat();
-    }
-
-    function updateLeaders() {
-        let accs = JSON.parse(localStorage.getItem('mutant_v8_saves') || '{}');
-        let sorted = Object.keys(accs).map(k => ({n: k, s: accs[k].score})).sort((a,b) => b.s - a.s).slice(0, 10);
-        document.getElementById('leader-list').innerHTML = sorted.map((u, i) => `
-            <div class="leader-row">
-                <span>#${i+1} ${u.n}</span>
-                <span style="color:var(--y)">${formatNum(u.s)}</span>
-            </div>`).join('');
-    }
-
-    function createClan() {
-        if(score < 100000) return alert("Мало грошей!");
-        const cn = document.getElementById('clan-name').value;
-        if(cn.length < 3) return alert("Назва за коротка!");
-        score -= 100000;
-        currentClan = cn;
-        alert(`Клан ${cn} створено!`);
+        inventory.unshift(newMut);
+        alert(`Успіх! Створено гібрид силою ${formatNum(newPwr)}`);
+        toggleCraft();
         updateUI();
     }
+
+    const clickBtn = document.getElementById('btn');
+    clickBtn.onclick = (e) => {
+        let gain = Math.floor(power * (1 + lvl * 0.3) * (Math.random() < 0.1 ? 5 : 1));
+        score += gain; xp += 40;
+        createFloat(e.clientX, e.clientY, `+${formatNum(gain)}`, "#fff");
+        if(xp >= lvl * 1000) { lvl++; xp = 0; }
+        updateUI(); moveBtn();
+    };
 
     function updateUI() {
         document.getElementById('score').innerText = formatNum(score);
         document.getElementById('lvl').innerText = lvl;
-        document.getElementById('xp-bar').style.width = (xp / (lvl * 500)) * 100 + "%";
+        document.getElementById('xp-bar').style.width = (xp / (lvl * 1000)) * 100 + "%";
+    }
+
+    function formatNum(n) {
+        if(n >= 1e9) return (n/1e9).toFixed(1) + 'B';
+        if(n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+        if(n >= 1e3) return (n/1e3).toFixed(1) + 'k';
+        return Math.floor(n);
     }
 
     function moveBtn() {
-        const x = Math.random() * (window.innerWidth - 180) + 40;
+        const x = Math.random() * (window.innerWidth - 300) + 150;
         const y = Math.random() * (window.innerHeight - 300) + 150;
         clickBtn.style.left = x + 'px';
         clickBtn.style.top = y + 'px';
@@ -338,10 +277,10 @@
         const p = document.getElementById('inv-panel');
         p.style.display = (p.style.display === 'flex') ? 'none' : 'flex';
         if(p.style.display === 'flex') {
-            document.getElementById('inv-list').innerHTML = inventory.slice().reverse().map((item, i) => `
-                <div style="background:#111; padding:10px; margin:5px; border-left:4px solid ${item.c}; display:flex; justify-content:space-between; align-items:center;">
-                    <div style="font-size:10px; text-align:left;"><b>${item.n}</b><br>PWR: ${formatNum(item.p)}</div>
-                    <button onclick="power=${item.p}; alert('Екіпіровано!')" style="background:var(--g); border:none; padding:5px; border-radius:3px;">USE</button>
+            document.getElementById('inv-list').innerHTML = inventory.slice().reverse().map(item => `
+                <div style="background:#111; padding:10px; margin:5px 0; border-left:4px solid ${item.c}; display:flex; justify-content:space-between;">
+                    <span>PWR: ${formatNum(item.p)}</span>
+                    <button onclick="power=${item.p}; toggleInv();" style="background:var(--g); border:none; padding:5px; border-radius:3px; cursor:pointer;">USE</button>
                 </div>
             `).join('');
         }
@@ -349,18 +288,17 @@
 
     function createFloat(x, y, t, c) {
         const el = document.createElement('div');
-        el.style.cssText = `position:fixed; left:${x}px; top:${y}px; color:${c}; font-weight:900; pointer-events:none; z-index:3000; animation: fadeUp 1s forwards;`;
+        el.style.cssText = `position:fixed; left:${x}px; top:${y}px; color:${c}; font-weight:900; pointer-events:none; animation: up 0.7s forwards; z-index:1000;`;
         el.innerText = t; document.body.appendChild(el);
-        setTimeout(() => el.remove(), 1000);
+        setTimeout(() => el.remove(), 700);
     }
 
-    // Canvas Background
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
     window.onresize = resize; resize();
     function anim() {
-        ctx.fillStyle = 'rgba(1,1,3,0.15)';
+        ctx.fillStyle = 'rgba(1, 1, 3, 0.2)';
         ctx.fillRect(0,0,canvas.width,canvas.height);
         requestAnimationFrame(anim);
     }
@@ -368,10 +306,7 @@
 </script>
 
 <style>
-    @keyframes fadeUp {
-        0% { transform: translateY(0); opacity: 1; }
-        100% { transform: translateY(-100px); opacity: 0; }
-    }
+    @keyframes up { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-80px); opacity: 0; } }
 </style>
 
 </body>
